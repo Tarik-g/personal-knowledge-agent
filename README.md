@@ -8,7 +8,7 @@ Upload a PDF, ask a question about it, and receive an answer with a verifiable p
 
 ## Current status
 
-The exact first-release scope and acceptance criteria are documented in [docs/MVP.md](docs/MVP.md). The API has a health endpoint and a `POST /documents/extract` endpoint for text-based PDFs up to 10 MiB. It returns page text and smaller, page-aware passages. Retrieval and question answering are planned next; they are not implemented yet.
+The exact first-release scope and acceptance criteria are documented in [docs/MVP.md](docs/MVP.md). The API extracts page-aware passages from text-based PDFs up to 10 MiB. With a configured database, `POST /documents` saves passages, `GET /documents` lists only the current browser's uploads, and `GET /documents/{id}/chunks` returns their source passages. Retrieval and question answering are planned next.
 
 ## Run the API locally
 
@@ -33,13 +33,15 @@ chunks = chunk_pages(pages)
 print(chunks)
 ```
 
-## Vector search without Docker
+## PostgreSQL without Docker
 
-This project uses hosted PostgreSQL with `pgvector`, so local development and the eventual online demo can connect to the same kind of database. For the first database exercise, create a PostgreSQL project on [Neon](https://neon.com/) and paste the contents of [db/vector_demo.sql](db/vector_demo.sql) into its SQL Editor. Run the whole script together: it creates a temporary example table and lists the closest vectors first.
+This project uses hosted PostgreSQL with `pgvector`, so local development and the eventual online demo can connect to the same kind of database. Create a separate [Neon](https://neon.com/) project for Jarvis Lite. In its SQL Editor, run [db/schema.sql](db/schema.sql) once to create the tables. Copy [.env.example](.env.example) to an ignored `.env` file and replace its placeholder `DATABASE_URL` with the project's connection string. The API start command above stays the same.
 
-The three-number vectors in that script are made-up examples, not embeddings calculated from the labels. A real document table and a `DATABASE_URL` connection will follow when we implement retrieval. Keep the connection string in an environment variable, never in Git.
+For a first vector-search exercise, run all of [db/vector_demo.sql](db/vector_demo.sql) together in the SQL Editor. Its three-number vectors are made-up examples, not embeddings calculated from the labels. The real `chunks.embedding` column remains empty until an embedding model is selected. Keep the connection string in `.env` or your hosting provider's secret settings, never in Git.
 
-For the portfolio release, the planned setup is a hosted React frontend, a hosted FastAPI backend, and hosted PostgreSQL with `pgvector`. The repository will include deployment instructions and a public demo link when the full upload-to-answer flow works.
+Each browser receives a random, HTTP-only cookie. The database stores only its hash, and every saved document belongs to that session. Both the document list and source passages filter by it; idle sessions and their documents are deleted on a later database request after 24 hours. Different browsers do not see one another's uploads. Tabs in the same browser share a session, and clearing cookies starts a fresh one. The eventual React interface and API will be served from one HTTPS origin so the browser sends this cookie with requests.
+
+For the portfolio release, the planned setup is a hosted React/FastAPI app and hosted PostgreSQL with `pgvector`. The repository will include deployment instructions and a public demo link when the full upload-to-answer flow works.
 
 ## Planned milestones
 

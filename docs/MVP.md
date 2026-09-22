@@ -17,6 +17,7 @@ It is hard to find and verify information inside a PDF. Jarvis Lite should answe
 - One PDF per question; no search across a document collection yet.
 - Text-based PDFs only. Scanned PDFs requiring OCR are a later extension.
 - No login, conversation history, Markdown/text upload, finance integration, agent tools, or autonomous actions in this release.
+- Each anonymous browser has its own temporary document space. All reads and retrieval queries must be scoped to that browser's session, and idle data is removed after 24 hours.
 - Development and verification run locally first. The final portfolio demo must be publicly reachable without Docker on the visitor's machine.
 - The model and embedding provider will be selected before those steps are implemented, considering cost and whether document content may leave the local machine.
 
@@ -28,6 +29,7 @@ It is hard to find and verify information inside a PDF. Jarvis Lite should answe
 4. When the retrieved passages do not support an answer, the assistant says that it cannot find the answer in the PDF and does not fabricate a source.
 5. A small end-to-end example and automated checks demonstrate the successful path and the main error cases.
 6. A public demo URL supports the complete upload, question, and cited-answer flow.
+7. Uploading a PDF in browser A does not expose it to browser B, including through document lists or questions.
 
 ## Build order
 
