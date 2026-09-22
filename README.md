@@ -4,11 +4,11 @@ A personal document assistant built step by step as an Applied AI portfolio proj
 
 ## Goal
 
-Upload PDF, Markdown, and text documents; ask questions about them; and receive answers with verifiable source references. The first release will use React, FastAPI, PostgreSQL, and `pgvector`.
+Upload a PDF, ask a question about it, and receive an answer with a verifiable page reference and supporting excerpt. The first release will use React, FastAPI, PostgreSQL, and `pgvector`.
 
 ## Current status
 
-The project scope is documented in [docs/MVP.md](docs/MVP.md). The first working component is a small FastAPI service with a health endpoint. Document ingestion, retrieval, and chat are planned next; they are not implemented yet.
+The exact first-release scope and acceptance criteria are documented in [docs/MVP.md](docs/MVP.md). The first working component is a small FastAPI service with a health endpoint. PDF ingestion, retrieval, and question answering are planned next; they are not implemented yet.
 
 ## Run the API locally
 
@@ -25,10 +25,10 @@ Open <http://127.0.0.1:8000/health> to check the service. Interactive API docume
 
 ## Planned milestones
 
-1. Document upload and text extraction.
+1. PDF upload, validation, and page-aware text extraction.
 2. Chunking, embeddings, and retrieval with PostgreSQL and `pgvector`.
-3. Question answering with source references and conversation history.
-4. A bounded agent loop with document search, calculator, and read-only finance access.
+3. Question answering with page references, supporting excerpts, and a small React interface.
+4. A bounded agent loop with tools and error handling.
 5. Evaluation, safety checks, observability, Docker, CI, and deployment.
 
 Each milestone will be implemented and verified in small increments.
