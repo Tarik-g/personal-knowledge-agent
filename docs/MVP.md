@@ -17,7 +17,7 @@ It is hard to find and verify information inside a PDF. Jarvis Lite should answe
 - One PDF per question; no search across a document collection yet.
 - Text-based PDFs only. Scanned PDFs requiring OCR are a later extension.
 - No login, conversation history, Markdown/text upload, finance integration, agent tools, or autonomous actions in this release.
-- Development and verification run locally first. Deployment comes after the quality milestones.
+- Development and verification run locally first. The final portfolio demo must be publicly reachable without Docker on the visitor's machine.
 - The model and embedding provider will be selected before those steps are implemented, considering cost and whether document content may leave the local machine.
 
 ## Acceptance criteria
@@ -27,6 +27,7 @@ It is hard to find and verify information inside a PDF. Jarvis Lite should answe
 3. A question answered from the PDF shows a filename, page number, and excerpt that can be checked in the original PDF.
 4. When the retrieved passages do not support an answer, the assistant says that it cannot find the answer in the PDF and does not fabricate a source.
 5. A small end-to-end example and automated checks demonstrate the successful path and the main error cases.
+6. A public demo URL supports the complete upload, question, and cited-answer flow.
 
 ## Build order
 
@@ -36,7 +37,7 @@ It is hard to find and verify information inside a PDF. Jarvis Lite should answe
 4. PostgreSQL, `pgvector`, embeddings, and retrieval.
 5. Answer generation and source handling.
 6. React upload and question interface.
-7. Verify the full flow and document the result.
+7. Verify the full flow, deploy it without Docker, and document the public demo.
 
 For each step, we briefly explain the purpose, implement one small piece, check its behavior, and review what was learned before moving on.
 
@@ -46,6 +47,6 @@ For each step, we briefly explain the purpose, implement one small piece, check 
 - Document search, calculator, and read-only access to the finance dashboard as tools.
 - A fixed evaluation set measuring retrieval and answer quality; prompt-injection checks; logging of latency, tokens, and cost.
 - Conversation history and broader file support, if useful after the first release.
-- Docker, CI, and cloud deployment.
+- CI and deployment improvements.
 
 The ML transaction classifier is a separate project in the existing `fullstack-finance-dashboard` repository. This repository does not change the finance dashboard. Fine-tuning, voice, and multi-agent workflows are separate later experiments.
