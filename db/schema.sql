@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS chunks (
     page_number integer NOT NULL CHECK (page_number > 0),
     chunk_number integer NOT NULL CHECK (chunk_number > 0),
     content text NOT NULL,
-    embedding vector,
+    embedding vector(384),
     UNIQUE (document_id, page_number, chunk_number)
 );
 

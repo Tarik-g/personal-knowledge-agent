@@ -4,23 +4,45 @@ from pathlib import Path
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pypdf.errors import PdfReadError
 import psycopg
 
 from jarvis import database
+from jarvis.answering import generate_answer_from_chunks
 from jarvis.chunking import chunk_pages
+from jarvis.embeddings import LocalEmbeddingModel
+from jarvis.generation import (
+    AnswerGenerationFailed,
+    AnswerGenerationNotConfigured,
+    OllamaAnswerGenerator,
+)
 from jarvis.pdf import extract_pages_from_stream
+from jarvis.retrieval import find_relevant_chunks
 from jarvis.sessions import DemoSessionId
 
 app = FastAPI(title="Jarvis Lite", version="0.1.0")
 MAX_PDF_BYTES = 10 * 1024 * 1024
+FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+embedding_model = LocalEmbeddingModel()
+answer_generator = OllamaAnswerGenerator()
+
+if (FRONTEND_DIST / "assets").is_dir():
+    app.mount(
+        "/assets",
+        StaticFiles(directory=FRONTEND_DIST / "assets"),
+        name="frontend-assets",
+    )
 
 
-@app.get("/", include_in_schema=False)
-def root() -> RedirectResponse:
-    """Open the API documentation from the base URL."""
+@app.get("/", include_in_schema=False, response_model=None)
+def root() -> FileResponse | RedirectResponse:
+    """Open the built frontend, or API documentation before it exists."""
+    index = FRONTEND_DIST / "index.html"
+    if index.is_file():
+        return FileResponse(index)
     return RedirectResponse(url="/docs")
 
 
@@ -34,6 +56,59 @@ def health() -> dict[str, str]:
 def extract_document(file: Annotated[UploadFile, File()]) -> dict:
     """Read a PDF without saving it; useful for checking extraction locally."""
     return _extract_document(file)
+
+
+@app.post("/documents/search")
+def search_document(
+    file: Annotated[UploadFile, File()],
+    question: Annotated[str, Form()],
+    limit: Annotated[int, Form(ge=1, le=5)] = 3,
+) -> dict:
+    """Find PDF passages whose meaning is closest to the question."""
+    extracted = _extract_document(file)
+    try:
+        matches = find_relevant_chunks(
+            question,
+            extracted["abschnitte"],
+            embedding_model,
+            limit,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return {
+        "frage": question.strip(),
+        "dateiname": extracted["dateiname"],
+        "treffer": matches,
+    }
+
+
+@app.post("/documents/answer")
+def answer_document_question(
+    file: Annotated[UploadFile, File()],
+    question: Annotated[str, Form()],
+) -> dict:
+    """Answer from the best supported PDF passage and cite its source."""
+    extracted = _extract_document(file)
+    try:
+        result = generate_answer_from_chunks(
+            question,
+            extracted["abschnitte"],
+            embedding_model,
+            answer_generator,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except AnswerGenerationNotConfigured as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except AnswerGenerationFailed as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return {
+        "frage": question.strip(),
+        "dateiname": extracted["dateiname"],
+        **result,
+    }
 
 
 @app.post("/documents", status_code=201)

@@ -8,9 +8,12 @@ It is hard to find and verify information inside a PDF. Jarvis Lite should answe
 
 1. Upload one text-based PDF in the React interface.
 2. The FastAPI backend validates the file and extracts text with page numbers.
-3. The backend splits the text into chunks, creates embeddings, and stores them in PostgreSQL with `pgvector`.
-4. Ask a question about that PDF. The backend retrieves relevant chunks and uses them to generate an answer.
-5. See the answer with the PDF filename, page number, and a supporting excerpt for each source.
+3. The backend splits the text into chunks and creates local embeddings.
+4. The backend retrieves the most relevant chunks for the question.
+5. The local Qwen3 model formulates an answer from those chunks only.
+6. See the answer with the PDF filename, page number, and a supporting excerpt for each source.
+
+The current implementation sends the PDF with every question and does not persist it. The next iteration stores the document and its embeddings in PostgreSQL so the same PDF can be questioned repeatedly.
 
 ## First-release boundaries
 
@@ -19,7 +22,7 @@ It is hard to find and verify information inside a PDF. Jarvis Lite should answe
 - No login, conversation history, Markdown/text upload, finance integration, agent tools, or autonomous actions in this release.
 - Each anonymous browser has its own temporary document space. All reads and retrieval queries must be scoped to that browser's session, and idle data is removed after 24 hours.
 - Development and verification run locally first. The final portfolio demo must be publicly reachable without Docker on the visitor's machine.
-- The model and embedding provider will be selected before those steps are implemented, considering cost and whether document content may leave the local machine.
+- Embeddings use the local multilingual MiniLM model through FastEmbed. Answers use the local `qwen3:1.7b` model through Ollama. PDF passages stay on the machine during both steps, and neither step has a per-request API charge.
 
 ## Acceptance criteria
 
@@ -34,12 +37,14 @@ It is hard to find and verify information inside a PDF. Jarvis Lite should answe
 ## Build order
 
 1. Define the scope and start the API (done).
-2. Upload validation and page-aware text extraction.
-3. Chunking with page metadata.
-4. PostgreSQL, `pgvector`, embeddings, and retrieval.
-5. Answer generation and source handling.
-6. React upload and question interface.
-7. Verify the full flow, deploy it without Docker, and document the public demo.
+2. Upload validation and page-aware text extraction (done).
+3. Chunking with page metadata (done).
+4. Local embeddings and semantic retrieval (done).
+5. Local answer generation and source handling (done).
+6. React upload and question interface (done).
+7. Persist documents and embeddings with PostgreSQL and `pgvector` (next).
+8. Add retrieval evaluation and calibrate the no-answer threshold.
+9. Deploy without requiring Docker on the visitor's machine and document the public demo.
 
 For each step, we briefly explain the purpose, implement one small piece, check its behavior, and review what was learned before moving on.
 
